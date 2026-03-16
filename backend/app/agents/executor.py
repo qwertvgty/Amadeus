@@ -132,7 +132,7 @@ async def _synthesize(
     ]
 
     try:
-        return await call_llm(messages)
+        return await call_llm(messages, caller="executor_synthesize")
     except Exception as e:
         logger.error(f"[Executor] Synthesis failed: {e}")
         return f"I gathered the data but had trouble composing a response: {e}"

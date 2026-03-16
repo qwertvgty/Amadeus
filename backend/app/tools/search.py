@@ -37,5 +37,5 @@ class SearchTool(BaseTool):
             {"role": "user", "content": f"Search: {query}"},
         ]
 
-        reply = await call_llm(messages)
+        reply = await call_llm(messages, caller="tool_search")
         return {"result": reply, "query": query, "source": "llm_knowledge"}

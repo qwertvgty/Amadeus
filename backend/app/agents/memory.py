@@ -66,7 +66,7 @@ async def extract_and_save(user_id: str, user_message: str, turn_id: str = "") -
     ]
 
     try:
-        raw = await call_llm(messages)
+        raw = await call_llm(messages, caller="memory_extract")
         raw = raw.strip()
         if raw.startswith("```"):
             raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]

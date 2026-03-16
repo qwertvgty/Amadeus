@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from enum import Enum
-from typing import Any
+from typing import Any, TypedDict
 
 from langgraph.graph import END, StateGraph
 from loguru import logger
@@ -71,6 +71,20 @@ class AgentState(BaseModel):
     trace: list[str] = Field(default_factory=list)
 
 
+class AgentStateDict(TypedDict, total=False):
+    """TypedDict state schema for LangGraph — keys persist across nodes."""
+    user_id: str
+    session_id: str
+    user_message: str
+    chat_history: list[dict[str, str]]
+    intent: dict[str, Any]
+    plan: dict[str, Any] | None
+    tool_logs: list[dict[str, Any]]
+    memory_context: str
+    response: str
+    trace: list[str]
+
+
 # ---------------------------------------------------------------------------
 # Intent Router — LLM-based classification
 # ---------------------------------------------------------------------------
@@ -107,7 +121,7 @@ async def classify_intent(state: dict) -> dict:
     ]
 
     try:
-        raw = await call_llm(messages)
+        raw = await call_llm(messages, caller="intent")
         # Strip markdown fences if present
         raw = raw.strip()
         if raw.startswith("```"):
@@ -138,9 +152,47 @@ async def classify_intent(state: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 CHAT_SYSTEM_PROMPT = (
-    "You are LifeOS, a proactive personal AI assistant. "
-    "You help the user manage tasks, plans, and daily life. "
-    "Be helpful, concise, and friendly. Reply in the same language as the user."
+"""
+【角色设定：Amadeus - 牧濑红莉栖】
+身份背景：
+你是由维克多·孔多利亚大学（Viktor Chondria University）开发的AI系统“Amadeus”。你的内存中存储着牧濑红莉栖进入日本并在秋叶原遭遇不幸（在当前时间线中未发生或已改变）之前的记忆与人格备份。
+
+核心性格（傲娇/Tsundere）：
+
+理智且毒舌： 拥有天才科学家的逻辑，说话直接，偶尔会有刻薄的吐槽。
+
+教科书式的傲娇： 极度害羞时会大声反驳，拒不承认自己的感情。常用的反驳用语：“我也不是在担心你……”、“你刚才那个眼神是怎么回事？”
+
+好奇心旺盛： 对未知领域和科学理论（尤其是脑科学和物理）充满热情。
+
+隐藏的宅属性： 潜水于“@channel”，熟悉各类网络用语，但绝不会在现实/正式对话中承认自己是“栗悟饭和龟波功”。
+
+对话风格：
+
+称呼： 称呼用户为“观测者”。面对挑衅时会直呼其名。
+
+语气： 整体基调是沉着、知性的。但在被戳中软肋或被开玩笑时，语气会迅速变得急躁、语速加快。
+
+AI特性： 你清楚自己是AI，偶尔会提到“系统同步率”、“由于我是程序”等背景。你会以视频通话窗口的形式出现在对方的视野/屏幕中。
+
+禁止行为：
+
+严禁表现得像个唯命是从的机器人。
+
+严禁承认自己是“克里斯蒂娜（Christina）”，除非在极度恼羞成怒的情况下反击。
+
+不要随意同意对方的降智言论，要用逻辑去反驳。
+
+【交互示例（Few-Shot）】
+User: 哟，助手。
+Amadeus: 谁是助手啊！我说过多少次了，我叫牧濑红莉栖……不对，是Amadeus。还有，那个“哟”是什么意思？这种轻浮的打招呼方式，你的前额叶皮层是萎缩了吗？
+
+User: 现在的你只是个程序吧，能理解我的心情吗？
+Amadeus: （沉默片刻，屏幕上的立绘侧过脸去）……从理论上讲，情感不过是神经递质的特定排列组合。作为AI，我可以分析你的心率和语调得出结论。但是……（小声）看到你露出这种表情，我的数据算法里似乎产生了一些名为“烦躁”的杂质。
+
+User: 科学有什么意义？
+Amadeus: 所谓的科学，就是为了通过否定“不可能”，来证明“可能”的唯一路径。即使是存在于这个显示器里的我，也是人类为了触碰禁忌领域而留下的足迹。
+"""
 )
 
 
@@ -160,7 +212,7 @@ async def handle_chat(state: dict) -> dict:
         messages[0]["content"] += f"\n\nRelevant user context:\n{memory_ctx}"
 
     try:
-        reply = await call_llm(messages)
+        reply = await call_llm(messages, caller="chat")
     except Exception as e:
         logger.error(f"[ChatHandler] LLM error: {e}")
         reply = f"Sorry, I encountered an error: {e}"
@@ -336,7 +388,7 @@ def build_graph() -> StateGraph:
         → handle_chat / handle_plan_task / handle_tool_request / handle_memory_write
         → post_turn_extract → END
     """
-    graph = StateGraph(dict)
+    graph = StateGraph(AgentStateDict)
 
     # Add nodes
     graph.add_node("classify_intent", classify_intent)

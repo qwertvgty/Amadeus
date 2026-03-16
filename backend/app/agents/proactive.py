@@ -123,7 +123,7 @@ async def generate_morning_briefing(user_id: str = "default_user") -> str:
     ]
 
     try:
-        briefing = await call_llm(messages)
+        briefing = await call_llm(messages, caller="proactive_briefing")
     except Exception as e:
         logger.error(f"[Proactive] Briefing generation failed: {e}")
         briefing = f"Good morning! I couldn't generate your briefing today: {e}"

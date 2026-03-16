@@ -88,7 +88,7 @@ async def generate_plan(
     ]
 
     try:
-        raw = await call_llm(messages)
+        raw = await call_llm(messages, caller="planner")
         raw = raw.strip()
         if raw.startswith("```"):
             raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]

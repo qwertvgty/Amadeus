@@ -2,14 +2,28 @@
 
 from __future__ import annotations
 
+import time
+
+from loguru import logger
+
 from backend.app.core.config import settings
 
 
-async def call_llm(messages: list[dict[str, str]]) -> str:
+async def call_llm(messages: list[dict[str, str]], caller: str = "") -> str:
     """Call the configured LLM provider with a list of messages.
 
     Supports: openai, anthropic, deepseek.
     """
+    tag = f"[LLM:{caller}]" if caller else "[LLM]"
+    logger.debug(f"{tag} Input messages ({len(messages)}):")
+    for m in messages:
+        role = m["role"]
+        content = m["content"]
+        preview = content[:200] + "..." if len(content) > 200 else content
+        logger.debug(f"  {role}: {preview}")
+
+    start = time.monotonic()
+
     if settings.llm_provider == "anthropic":
         import anthropic
 
@@ -27,7 +41,11 @@ async def call_llm(messages: list[dict[str, str]]) -> str:
             system=system_msg,
             messages=chat_msgs,
         )
-        return resp.content[0].text
+        text = resp.content[0].text
+        elapsed = time.monotonic() - start
+        logger.info(f"{tag} Done in {elapsed:.1f}s, output {len(text)} chars")
+        logger.debug(f"{tag} Output: {text[:300]}{'...' if len(text) > 300 else ''}")
+        return text
 
     # OpenAI-compatible (openai / deepseek)
     from openai import AsyncOpenAI
@@ -45,4 +63,8 @@ async def call_llm(messages: list[dict[str, str]]) -> str:
     resp = await client.chat.completions.create(
         model=model, messages=messages, max_tokens=1024
     )
-    return resp.choices[0].message.content
+    text = resp.choices[0].message.content
+    elapsed = time.monotonic() - start
+    logger.info(f"{tag} Done in {elapsed:.1f}s, output {len(text)} chars")
+    logger.debug(f"{tag} Output: {text[:300]}{'...' if len(text) > 300 else ''}")
+    return text
