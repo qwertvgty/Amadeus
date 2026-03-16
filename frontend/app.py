@@ -87,7 +87,7 @@ with col_chat:
                             "session_id": "default_session",
                             "message": prompt,
                         },
-                        timeout=60.0,
+                        timeout=600.0,
                     )
                     resp.raise_for_status()
                     data = resp.json()
