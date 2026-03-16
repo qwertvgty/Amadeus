@@ -20,6 +20,9 @@ class ChatResponse(BaseModel):
     intent: str | None = None
     plan: dict[str, Any] | None = None
     tool_logs: list[dict[str, Any]] = []
+    trace: list[str] = []
+    trace_id: str | None = None
+    duration_ms: int = 0
 
 
 # === Database Models ===

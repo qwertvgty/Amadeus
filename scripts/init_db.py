@@ -55,6 +55,20 @@ CREATE TABLE IF NOT EXISTS tool_logs (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS trace_logs (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    user_message TEXT NOT NULL,
+    intent TEXT DEFAULT '',
+    plan_json TEXT DEFAULT '{}',
+    tool_logs_json TEXT DEFAULT '[]',
+    trace_json TEXT DEFAULT '[]',
+    response TEXT DEFAULT '',
+    duration_ms INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Insert a default user for development
 INSERT OR IGNORE INTO user_profiles (user_id, name, role)
 VALUES ('default_user', 'Developer', 'engineer');
