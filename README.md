@@ -73,7 +73,7 @@
 ### 环境要求
 
 - Python 3.11+
-- 至少一个 LLM API Key（OpenAI / Anthropic / DeepSeek / NEWAPI）
+- 至少一个 LLM API Key（OpenAI / Anthropic / DeepSeek / Gemini / NEWAPI）
 
 ### 安装
 
@@ -205,7 +205,7 @@ lifeos/
 |----|------|----------|
 | 后端框架 | FastAPI + Pydantic | 异步高性能，类型安全 |
 | Agent 编排 | LangGraph | 显式状态流，可视化友好 |
-| LLM | OpenAI / Anthropic / DeepSeek / NEWAPI | 多提供商灵活切换，支持按场景选择模型 |
+| LLM | OpenAI / Anthropic / DeepSeek / Gemini / NEWAPI | 多提供商灵活切换，支持按场景选择模型 |
 | 结构化存储 | SQLite | 零配置，一键启动 |
 | 向量存储 | Chroma | 轻量级，内置 embedding |
 | 前端 | Streamlit | 快速原型，核心在后端 |
@@ -229,14 +229,14 @@ lifeos/
 
 ## LLM 多模型配置
 
-支持 4 种 LLM 提供商（OpenAI / Anthropic / DeepSeek / NEWAPI），并可为不同调用场景独立配置模型。
+支持 4 种 LLM 提供商（OpenAI / Anthropic / DeepSeek / Gemini / NEWAPI），并可为不同调用场景独立配置模型。
 
 ### 基础配置
 
 在 `.env` 中设置全局默认提供商和模型：
 
 ```env
-LLM_PROVIDER=newapi          # openai / anthropic / deepseek / newapi
+LLM_PROVIDER=newapi          # openai / anthropic / deepseek / gemini / newapi
 LLM_MODEL=gpt-4o-mini
 
 # NEWAPI 网关（OpenAI 兼容格式）

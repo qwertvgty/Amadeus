@@ -16,11 +16,12 @@ class Settings(BaseSettings):
     )
 
     # LLM
-    llm_provider: str = "openai"  # openai / anthropic / deepseek / newapi
+    llm_provider: str = "openai"  # openai / anthropic / deepseek / gemini / newapi
     llm_model: str = "gpt-4o-mini"
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     deepseek_api_key: str = ""
+    gemini_api_key: str = ""
 
     # NEWAPI (OpenAI-compatible gateway)
     newapi_api_key: str = ""

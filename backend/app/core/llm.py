@@ -17,7 +17,7 @@ async def call_llm(
 ) -> str:
     """Call the configured LLM provider with a list of messages.
 
-    Supports: openai, anthropic, deepseek, newapi.
+    Supports: openai, anthropic, deepseek, gemini, newapi.
 
     Provider/model resolution priority:
       1. Explicit ``provider``/``model`` arguments
@@ -59,13 +59,18 @@ async def call_llm(
         )
         text = resp.content[0].text
     else:
-        # OpenAI-compatible: openai / deepseek / newapi
+        # OpenAI-compatible: openai / deepseek / gemini / newapi
         from openai import AsyncOpenAI
 
         if effective_provider == "newapi":
             client = AsyncOpenAI(
                 api_key=settings.newapi_api_key,
                 base_url=settings.newapi_base_url,
+            )
+        elif effective_provider == "gemini":
+            client = AsyncOpenAI(
+                api_key=settings.gemini_api_key,
+                base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
             )
         elif effective_provider == "deepseek":
             client = AsyncOpenAI(
