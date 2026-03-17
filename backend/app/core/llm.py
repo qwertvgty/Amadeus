@@ -2,11 +2,54 @@
 
 from __future__ import annotations
 
+import json
 import time
 
+import httpx
 from loguru import logger
 
 from backend.app.core.config import settings
+
+
+async def _call_newapi(
+    messages: list[dict[str, str]],
+    model: str,
+    override: dict,
+    tag: str,
+) -> str:
+    """Call NEWAPI gateway directly via httpx (bypass OpenAI SDK)."""
+    url = f"{settings.newapi_base_url.rstrip('/')}/chat/completions"
+
+    headers = {"Content-Type": "application/json"}
+    if settings.newapi_api_key:
+        headers["Authorization"] = f"Bearer {settings.newapi_api_key}"
+    # Merge custom headers: global default, then per-caller override
+    if settings.newapi_headers:
+        headers.update(json.loads(settings.newapi_headers))
+    if override.get("headers"):
+        headers.update(override["headers"])
+
+    body: dict = {"model": model, "messages": messages}
+    group = override.get("group") or settings.newapi_group
+    if group:
+        body["group"] = group
+
+    logger.debug(
+        f"{tag} NEWAPI request → {url}\n"
+        f"  headers={headers}\n"
+        f"  body keys={list(body.keys())} model={model} group={group}"
+    )
+
+    async with httpx.AsyncClient(timeout=120) as client:
+        resp = await client.post(url, headers=headers, json=body)
+
+    logger.debug(f"{tag} NEWAPI response status={resp.status_code} body={resp.text[:500]}")
+
+    if resp.status_code != 200:
+        raise RuntimeError(f"NEWAPI returned {resp.status_code}: {resp.text[:300]}")
+
+    data = resp.json()
+    return data["choices"][0]["message"]["content"]
 
 
 async def call_llm(
@@ -40,7 +83,11 @@ async def call_llm(
 
     start = time.monotonic()
 
-    if effective_provider == "anthropic":
+    if effective_provider == "newapi":
+        text = await _call_newapi(
+            messages, effective_model or "gpt-4o-mini", override, tag
+        )
+    elif effective_provider == "anthropic":
         import anthropic
 
         client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
@@ -59,15 +106,10 @@ async def call_llm(
         )
         text = resp.content[0].text
     else:
-        # OpenAI-compatible: openai / deepseek / gemini / newapi
+        # OpenAI-compatible: openai / deepseek / gemini
         from openai import AsyncOpenAI
 
-        if effective_provider == "newapi":
-            client = AsyncOpenAI(
-                api_key=settings.newapi_api_key,
-                base_url=settings.newapi_base_url,
-            )
-        elif effective_provider == "gemini":
+        if effective_provider == "gemini":
             client = AsyncOpenAI(
                 api_key=settings.gemini_api_key,
                 base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
