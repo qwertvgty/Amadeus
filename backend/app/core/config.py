@@ -1,5 +1,10 @@
 """Application configuration loaded from environment variables."""
 
+from __future__ import annotations
+
+import json
+from functools import cached_property
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,11 +16,25 @@ class Settings(BaseSettings):
     )
 
     # LLM
-    llm_provider: str = "openai"  # openai / anthropic / deepseek
+    llm_provider: str = "openai"  # openai / anthropic / deepseek / newapi
     llm_model: str = "gpt-4o-mini"
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     deepseek_api_key: str = ""
+
+    # NEWAPI (OpenAI-compatible gateway)
+    newapi_api_key: str = ""
+    newapi_base_url: str = ""  # e.g. "https://your-gateway.com/v1"
+
+    # Per-caller LLM overrides (JSON string)
+    # Format: {"caller_name": {"provider": "newapi", "model": "gpt-4o"}, ...}
+    llm_caller_overrides: str = ""
+
+    @cached_property
+    def caller_overrides(self) -> dict[str, dict[str, str]]:
+        if not self.llm_caller_overrides:
+            return {}
+        return json.loads(self.llm_caller_overrides)
 
     # Database
     database_url: str = "sqlite:///data/lifeos.db"

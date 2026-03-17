@@ -73,7 +73,7 @@
 ### 环境要求
 
 - Python 3.11+
-- 至少一个 LLM API Key（OpenAI / Anthropic / DeepSeek）
+- 至少一个 LLM API Key（OpenAI / Anthropic / DeepSeek / NEWAPI）
 
 ### 安装
 
@@ -205,7 +205,7 @@ lifeos/
 |----|------|----------|
 | 后端框架 | FastAPI + Pydantic | 异步高性能，类型安全 |
 | Agent 编排 | LangGraph | 显式状态流，可视化友好 |
-| LLM | OpenAI / Anthropic / DeepSeek | 多提供商灵活切换 |
+| LLM | OpenAI / Anthropic / DeepSeek / NEWAPI | 多提供商灵活切换，支持按场景选择模型 |
 | 结构化存储 | SQLite | 零配置，一键启动 |
 | 向量存储 | Chroma | 轻量级，内置 embedding |
 | 前端 | Streamlit | 快速原型，核心在后端 |
@@ -226,6 +226,47 @@ lifeos/
 | GET | `/api/debug/tools` | 列出已注册工具 |
 | GET | `/api/debug/system` | 系统状态概览 |
 | GET | `/health` | 健康检查 |
+
+## LLM 多模型配置
+
+支持 4 种 LLM 提供商（OpenAI / Anthropic / DeepSeek / NEWAPI），并可为不同调用场景独立配置模型。
+
+### 基础配置
+
+在 `.env` 中设置全局默认提供商和模型：
+
+```env
+LLM_PROVIDER=newapi          # openai / anthropic / deepseek / newapi
+LLM_MODEL=gpt-4o-mini
+
+# NEWAPI 网关（OpenAI 兼容格式）
+NEWAPI_API_KEY=sk-xxx
+NEWAPI_BASE_URL=https://your-gateway.com/v1
+```
+
+### 按场景选择模型
+
+通过 `LLM_CALLER_OVERRIDES` 环境变量，为不同调用场景指定不同的提供商和模型（未列出的场景使用全局默认值）：
+
+```env
+LLM_CALLER_OVERRIDES={"intent":{"provider":"newapi","model":"gpt-4o-mini"},"chat":{"provider":"newapi","model":"gpt-4o"}}
+```
+
+**可配置的调用场景：**
+
+| caller 名称 | 场景说明 | 建议模型 |
+|-------------|---------|---------|
+| `intent` | 意图分类 | 便宜快速模型 |
+| `chat` | 聊天回复 | 强模型 |
+| `planner` | 任务规划 | 中等模型 |
+| `executor_synthesize` | 结果综合 | 中等模型 |
+| `memory_extract` | 记忆抽取 | 便宜快速模型 |
+| `proactive_briefing` | 每日早报 | 中等模型 |
+| `tool_search` | 搜索工具 | 便宜快速模型 |
+
+### 优先级
+
+模型选择遵循 3 层优先级：**代码参数** > **per-caller 环境变量覆盖** > **全局默认值**。
 
 ## 设计亮点（面试讲解）
 
