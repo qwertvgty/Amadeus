@@ -1,6 +1,5 @@
 """LifeOS Backend - FastAPI Application."""
 
-import asyncio
 from contextlib import asynccontextmanager
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -29,7 +28,7 @@ def _setup_scheduler() -> None:
 
     # Daily morning briefing at 08:00
     scheduler.add_job(
-        lambda: asyncio.ensure_future(scheduled_morning_briefing()),
+        scheduled_morning_briefing,
         trigger=CronTrigger(hour=8, minute=0),
         id="morning_briefing",
         name="Daily morning briefing",

@@ -17,4 +17,5 @@ data/
 .claude/
 .agent/
 .agents/
+.obsidian/
 skills-lock.json
